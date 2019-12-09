@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>W601</title>
+    <script src="js/Chart.bundle.min.js"></script>
+    <script src="js/jquery-3.4.1.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+
+<body style="background-color: rgb(238, 236, 236);">
+    <!--HEAD-->
+    <div style="height: 60px; background: rgb(40, 80, 126); color: white;">
+        <h1 style="margin:0 auto;width: 380px;">W601 环境监测系统</h1>
+    </div>
+
+    <!--BODY-->
+    <div class="container" style="margin-top: 2vh;">
+        <div class="row">
+            <div class="col-lg-3" style="padding-left:0;padding-right:0;">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="card-title">实时监控</div>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">当前温度</span>
+                            </div>
+                            <input type="text" id="cur_temp" class="form-control" readonly
+                                style="background-color: white;">
+                        </div>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">当前湿度</span>
+                            </div>
+                            <input type="text" id="cur_humi" class="form-control" readonly
+                                style="background-color: white;">
+                        </div>
+                        <div class="input-group mb-3" id="redLed">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">红灯状态</span>
+                            </div>
+                            <input type="text" class="form-control" readonly value="关" style="background-color: white;">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" id="button-addon2"
+                                    onclick="led_toggle('red')">打开</button>
+                            </div>
+                        </div>
+
+                        <div class="input-group mb-3" id="blueLed">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">蓝灯状态</span>
+                            </div>
+                            <input type="text" class="form-control" readonly value="关" style="background-color: white;">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" id="button-addon2"
+                                    onclick="led_toggle('blue')">打开</button>
+                            </div>
+                        </div>
+
+                        <div class="input-group mb-3" id="greenLed">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">绿灯状态</span>
+                            </div>
+                            <input type="text" class="form-control" readonly value="关" style="background-color: white;">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" id="button-addon2"
+                                    onclick="led_toggle('green')">打开</button>
+                            </div>
+                        </div>
+                        <div class="alert alert-secondary" role="alert">
+                            本版本为预览版，后续会加入更多功能
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-1">
+            </div>
+            <div class="col-lg-8 card">
+                <div class="card-body">
+                    <div class="card-title">温湿度历史曲线</div>
+                    <canvas id="dataChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top:20px">
+
+            <div class="col-lg-6 card">
+                <div class="card-body">
+                    <div class="card-title">实时温度曲线</div>
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-6 card">
+                <div class="card-body">
+                    <div class="card-title">实时湿度曲线</div>
+                    <canvas id="humiChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
+
+<script>
+    var ctx1 = document.getElementById('dataChart');
+    var ctx2 = document.getElementById('tempChart');
+    var ctx3 = document.getElementById('humiChart');
+
+    var tempdata = [];
+    var humidata = [];
+
+    var dataChart = new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: ['0:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00',
+                '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00',
+                '21:00', '22:00', '23:00'],
+            datasets: [{
+                label: '温度（℃）',
+                data: tempdata,
+                borderColor: [
+                    'rgba(255, 99, 132, 1)'
+                ],
+                fill: false,
+                borderWidth: 2
+            },
+            {
+                label: '湿度（%）',
+                data: humidata,
+                borderColor: [
+                    'rgba(255, 99, 32, 1)'
+                ],
+                fill: false,
+                borderWidth: 2
+            }]
+        }
+    })
+
+    var tempChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '温度（℃）',
+                data: [],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)'
+                ],
+                fill: false,
+                borderWidth: 2
+            }]
+        }
+    })
+
+    var humiChart = new Chart(ctx3, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '湿度（%）',
+                data: [],
+                borderColor: [
+                    'rgba(255, 99, 32, 1)'
+                ],
+                fill: false,
+                borderWidth: 2
+            }]
+        }
+    })
+
+    // document.getElementById('btn').onclick = function () {
+    //     tempChart.data.datasets.forEach(dataset => {
+    //         dataset.data.shift();
+    //     });
+    //     tempChart.update();
+    // }
+
+    function getAht10Data() {
+        var date = new Date();
+
+        Date.prototype.format = function (fmt) {
+            var o = {
+                "M+": this.getMonth() + 1,                 //月份
+                "d+": this.getDate(),                    //日
+                "h+": this.getHours(),                   //小时
+                "m+": this.getMinutes(),                 //分
+                "s+": this.getSeconds(),                 //秒
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                "S": this.getMilliseconds()             //毫秒
+            };
+
+            if (/(y+)/.test(fmt)) {
+                fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            }
+
+            for (var k in o) {
+                if (new RegExp("(" + k + ")").test(fmt)) {
+                    fmt = fmt.replace(
+                        RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+                }
+            }
+
+            return fmt;
+        }
+
+        $.ajax({
+            url: "/cgi-bin/get_aht_data",
+            type: "GET",
+            dataType: "json", //返回数据格式为json
+            success: function (data) {
+                document.getElementById('cur_temp').value = data.temp;
+                document.getElementById('cur_humi').value = data.humi;
+                if (humiChart.data.datasets[0].data.length < 20) {
+                    humiChart.data.labels.push(date.format("mm:ss"));
+                    humiChart.data.datasets[0].data.push(data.humi);
+                }
+                else {
+                    humiChart.data.labels.shift();
+                    humiChart.data.labels.push(date.format("mm:ss"));
+                    humiChart.data.datasets[0].data.shift();
+                    humiChart.data.datasets[0].data.push(data.humi);
+                }
+                if (tempChart.data.datasets[0].data.length < 20) {
+                    tempChart.data.labels.push(date.format("mm:ss"));
+                    tempChart.data.datasets[0].data.push(data.temp);
+                }
+                else {
+                    tempChart.data.labels.shift();
+                    tempChart.data.labels.push(date.format("mm:ss"));
+                    tempChart.data.datasets[0].data.shift();
+                    tempChart.data.datasets[0].data.push(data.temp);
+                }
+
+                tempChart.update();
+                humiChart.update();
+            }
+        })
+    }
+
+    function getAht10SavedData() {
+        var date = new Date();
+        var current_hour = date.getHours();
+        $.ajax({
+            url: "/cgi-bin/get_aht_saved_data",
+            type: "GET",
+            dataType: "json", //返回数据格式为json
+            success: function (data) {
+                if (data.temp.length < 23) {
+                    var index = data.temp.length;
+                    for (var count = 0; count <= 23; count++) {
+                        if (count < index) {
+                            dataChart.data.labels[count] = `${current_hour - index + count + 1}:00`;
+                            dataChart.data.datasets[0].data[count] = data.temp[count];
+                            dataChart.data.datasets[1].data[count] = data.humi[count];
+                        } else {
+                            var futureTime = current_hour + (count - index + 1);
+                            if (futureTime > 23) {
+                                futureTime = futureTime - 24;
+                            }
+                            dataChart.data.labels[count] = `${futureTime}:00`;
+                        }
+                    }
+                }
+                else {
+                    for (var count = 0; count <= 23; count++) {
+                        var back_hour = current_hour - (23 - count);
+                        if (back_hour < 0) {
+                            back_hour = back_hour + 24;
+                        }
+                        dataChart.data.labels[count] = `${back_hour}:00`;
+                        dataChart.data.datasets[0].data[count] = data.temp[count];
+                        dataChart.data.datasets[1].data[count] = data.humi[count];
+                    }
+                }
+                dataChart.update();
+            }
+        })
+    }
+
+    function led_toggle(id) {
+        var currentDiv = '';
+        var currentStatus = '';
+        if (id === 'red') {
+            currentDiv = document.getElementById('redLed');
+        } else if (id === 'green') {
+            currentDiv = document.getElementById('greenLed');
+        } else if (id === 'blue') {
+            currentDiv = document.getElementById('blueLed');
+        }
+        currentStatus = currentDiv.children[1].value;
+        if (currentStatus === '开') {
+            currentStatus = 'ON';
+        } else {
+            currentStatus = 'OFF';
+        }
+
+        $.ajax({
+            url: "/cgi-bin/led_toggle",
+            type: "POST",
+            data: {
+                id: id,
+                status: currentStatus
+            },
+            dataType: "json",
+            success: function (data) {
+                if (currentStatus === 'OFF') {
+                    currentDiv.children[1].value = '开';
+                    currentDiv.children[2].children[0].innerHTML = '关闭';
+                } else {
+                    currentDiv.children[1].value = '关';
+                    currentDiv.children[2].children[0].innerHTML = '打开';
+                }
+            }
+        });
+
+    }
+
+    function getBoardDeviceStatue() {
+        var currentDiv = '';
+        $.ajax({
+            url: "/cgi-bin/get_device_status",
+            type: "GET",
+            dataType: "json",
+            success: function (data) {
+                currentDiv = document.getElementById('redLed');
+                if (data.redLedStatus === 'ON') {
+                    currentDiv.children[1].value = '开';
+                    currentDiv.children[2].children[0].innerHTML = '关闭';
+                } else {
+                    currentDiv.children[1].value = '关';
+                    currentDiv.children[2].children[0].innerHTML = '打开';
+                }
+                currentDiv = document.getElementById('greenLed');
+                if (data.greenLedStatus === 'ON') {
+                    currentDiv.children[1].value = '开';
+                    currentDiv.children[2].children[0].innerHTML = '关闭';
+                } else {
+                    currentDiv.children[1].value = '关';
+                    currentDiv.children[2].children[0].innerHTML = '打开';
+                }
+                currentDiv = document.getElementById('blueLed');
+                if (data.blueLedStatus === 'ON') {
+                    currentDiv.children[1].value = '开';
+                    currentDiv.children[2].children[0].innerHTML = '关闭';
+                } else {
+                    currentDiv.children[1].value = '关';
+                    currentDiv.children[2].children[0].innerHTML = '打开';
+                }
+            }
+        })
+    }
+
+    window.onload = function () {
+        getAht10SavedData();
+        getBoardDeviceStatue();
+    }
+
+    window.setInterval(getAht10SavedData, 1000 * 60 * 60)
+    window.setInterval(getAht10Data, 2000);
+
+</script>
