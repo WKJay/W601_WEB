@@ -69,31 +69,69 @@
                                     onclick="led_toggle('green')">打开</button>
                             </div>
                         </div>
-                        <div class="alert alert-secondary" role="alert">
-                            本版本为预览版，后续会加入更多功能
-                        </div>
+                        <button type="button" id="more" class="btn btn-outline-secondary btn-lg btn-block"
+                            onclick="mainCardContentSwitch()" style="margin-top: 45px;">邮件设置</button>
                     </div>
                 </div>
             </div>
             <div class="col-lg-1">
             </div>
             <div class="col-lg-8 card">
-                <div class="card-body">
+                <div class="card-body main-card" id="dataHistory">
                     <div class="card-title">温湿度历史曲线</div>
                     <canvas id="dataChart"></canvas>
+                </div>
+                <div class="card-body main-card" id="setting" hidden>
+                    <div class="card-title">邮件设置</div>
+                    <form>
+                        <div class="row">
+                            <div class="form-group col-md-6">
+                                <label for="server-addr">邮件服务器地址</label>
+                                <input type="text" class="form-control" id="server-addr" required disabled>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="port">端口号</label>
+                                <input type="text" class="form-control" id="server-port" required disabled>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-md-6">
+                                <label for="username">邮箱账号</label>
+                                <input type="email" class="form-control" id="username" required disabled>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="password">邮箱密码</label>
+                                <input type="password" class="form-control" id="password" required disabled>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group col-md-6">
+                                <label for="receiver">收件人邮箱</label>
+                                <input type="email" class="form-control" id="receiver" required disabled>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="tempWarn">温度报警阈值</label>
+                                <input type="number" class="form-control" id="tempWarn" required disabled>
+                            </div>
+                        </div>
+                        <button type="button" id="btnSaveSmtp" class="btn btn-outline-secondary btn-md btn-block"
+                            onclick="saveSMTP()" disabled>保存配置</button>
+                        <button type="button" id="btnOpenSmtp" class="btn btn-outline-secondary btn-md btn-block"
+                            onclick="openSMTP()">打开邮件功能</button>
+                    </form>
                 </div>
             </div>
         </div>
 
         <div class="row" style="margin-top:20px">
 
-            <div class="col-lg-6 card">
+            <div class="col-lg-6 main-card card">
                 <div class="card-body">
                     <div class="card-title">实时温度曲线</div>
                     <canvas id="tempChart"></canvas>
                 </div>
             </div>
-            <div class="col-lg-6 card">
+            <div class="col-lg-6 main-card card">
                 <div class="card-body">
                     <div class="card-title">实时湿度曲线</div>
                     <canvas id="humiChart"></canvas>
@@ -353,6 +391,158 @@
                 }
             }
         })
+    }
+
+    function mainCardContentSwitch() {
+        var dataCard = document.getElementById('dataHistory');
+        var settingCard = document.getElementById('setting');
+        var btn = document.getElementById('more');
+
+        if (dataCard.hidden == true) {
+            dataCard.hidden = false;
+            settingCard.hidden = true;
+            btn.innerHTML = '邮件设置';
+        } else {
+            dataCard.hidden = true;
+            settingCard.hidden = false;
+            btn.innerHTML = '返回监测';
+            getSMTP();
+        }
+    }
+
+    function openSMTP() {
+        var serverAddrDiv = document.getElementById('server-addr');
+        var serverPortDiv = document.getElementById('server-port');
+        var usernameDiv = document.getElementById('username');
+        var passwordDiv = document.getElementById('password');
+        var receiverDiv = document.getElementById('receiver');
+        var tempWarnDiv = document.getElementById('tempWarn');
+        var btnSaveSmtpDiv = document.getElementById('btnSaveSmtp');
+        var btnOpenSmtpDiv = document.getElementById('btnOpenSmtp');
+
+        if (btnOpenSmtpDiv.innerHTML === "打开邮件功能") {
+            if (serverAddrDiv.value == "" ||
+                serverPortDiv.value == "" ||
+                usernameDiv.value == "" ||
+                passwordDiv.value == "" ||
+                receiverDiv.value == "" ||
+                tempWarnDiv.value == "") {
+                btnOpenSmtpDiv.innerHTML = "关闭邮件功能";
+                serverAddrDiv.disabled = false;
+                serverPortDiv.disabled = false;
+                usernameDiv.disabled = false;
+                passwordDiv.disabled = false;
+                receiverDiv.disabled = false;
+                btnSaveSmtpDiv.disabled = false;
+                tempWarnDiv.disabled = false;
+            } else {
+                $.ajax({
+                    url: "/cgi-bin/smtp_enable",
+                    type: "GET",
+                    dataType: "json",
+                    success: function (data) {
+                        btnOpenSmtpDiv.innerHTML = "关闭邮件功能";
+                        serverAddrDiv.disabled = false;
+                        serverPortDiv.disabled = false;
+                        usernameDiv.disabled = false;
+                        passwordDiv.disabled = false;
+                        receiverDiv.disabled = false;
+                        btnSaveSmtpDiv.disabled = false;
+                        tempWarnDiv.disabled = false;
+                        alert('打开成功');
+                    }
+                });
+            }
+        } else {
+            $.ajax({
+                url: "/cgi-bin/smtp_diasble",
+                type: "GET",
+                dataType: "json",
+                success: function (data) {
+                    serverAddrDiv.disabled = true;
+                    serverPortDiv.disabled = true;
+                    usernameDiv.disabled = true;
+                    passwordDiv.disabled = true;
+                    receiverDiv.disabled = true;
+                    btnSaveSmtpDiv.disabled = true;
+                    tempWarnDiv.disabled = true;
+                    btnOpenSmtpDiv.innerHTML = "打开邮件功能";
+                    alert('关闭成功');
+                }
+            });
+        }
+    }
+
+    function saveSMTP() {
+        var serverAddrDiv = document.getElementById('server-addr');
+        var serverPortDiv = document.getElementById('server-port');
+        var usernameDiv = document.getElementById('username');
+        var passwordDiv = document.getElementById('password');
+        var receiverDiv = document.getElementById('receiver');
+        var tempWarnDiv = document.getElementById('tempWarn');
+        if (serverAddrDiv.value == "" ||
+            serverPortDiv.value == "" ||
+            usernameDiv.value == "" ||
+            passwordDiv.value == "" ||
+            receiverDiv.value == "" ||
+            tempWarnDiv.value == "") {
+            alert("邮件设置项不能有空！");
+        } else {
+            $.ajax({
+                url: "/cgi-bin/smtp_save",
+                type: "POST",
+                data: {
+                    server_addr: serverAddrDiv.value,
+                    server_port: serverPortDiv.value,
+                    username: usernameDiv.value,
+                    password: passwordDiv.value,
+                    receiver: receiverDiv.value,
+                    tempWarn: tempWarnDiv.value
+
+                },
+                dataType: "json",
+                success: function (data) {
+                    serverAddrDiv.disabled = true;
+                    serverPortDiv.disabled = true;
+                    usernameDiv.disabled = true;
+                    passwordDiv.disabled = true;
+                    receiverDiv.disabled = true;
+                    btnSaveSmtpDiv.disabled = true;
+                    btnOpenSmtpDiv.innerHTML = "打开邮件功能";
+                    alert('关闭成功');
+                }
+            });
+        }
+    }
+
+    function getSMTP() {
+        var serverAddrDiv = document.getElementById('server-addr');
+        var serverPortDiv = document.getElementById('server-port');
+        var usernameDiv = document.getElementById('username');
+        var passwordDiv = document.getElementById('password');
+        var receiverDiv = document.getElementById('receiver');
+        var tempWarnDiv = document.getElementById('tempWarn');
+        var btnSaveSmtpDiv = document.getElementById('btnSaveSmtp');
+        var btnOpenSmtpDiv = document.getElementById('btnOpenSmtp');
+
+        $.ajax({
+            url: "/cgi-bin/smtp_get_data",
+            type: "GET",
+            dataType: "json",
+            success: function (data) {
+                if(data.enable == 1){
+                    serverAddrDiv.value = data.server_addr;
+                    serverPortDiv.value = data.server_port;
+                    usernameDiv.value = data.username;
+                    passwordDiv.value = data.password;
+                    receiverDiv.value = data.receiver;
+                    tempWarnDiv.value = data.temp_warn;
+
+                    btnSaveSmtpDiv.disabled = false;
+                    btnOpenSmtpDiv.innerHTML = '关闭邮件功能';
+                }
+            }
+        });
     }
 
     window.onload = function () {
