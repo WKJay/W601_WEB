@@ -497,19 +497,11 @@
                     username: usernameDiv.value,
                     password: passwordDiv.value,
                     receiver: receiverDiv.value,
-                    tempWarn: tempWarnDiv.value
-
+                    temp_warn: tempWarnDiv.value,
                 },
                 dataType: "json",
                 success: function (data) {
-                    serverAddrDiv.disabled = true;
-                    serverPortDiv.disabled = true;
-                    usernameDiv.disabled = true;
-                    passwordDiv.disabled = true;
-                    receiverDiv.disabled = true;
-                    btnSaveSmtpDiv.disabled = true;
-                    btnOpenSmtpDiv.innerHTML = "打开邮件功能";
-                    alert('关闭成功');
+                    alert('保存成功！');
                 }
             });
         }
@@ -530,16 +522,31 @@
             type: "GET",
             dataType: "json",
             success: function (data) {
-                if(data.enable == 1){
-                    serverAddrDiv.value = data.server_addr;
-                    serverPortDiv.value = data.server_port;
-                    usernameDiv.value = data.username;
-                    passwordDiv.value = data.password;
-                    receiverDiv.value = data.receiver;
-                    tempWarnDiv.value = data.temp_warn;
-
+                serverAddrDiv.value = data.server_addr;
+                serverPortDiv.value = data.server_port;
+                usernameDiv.value = data.username;
+                passwordDiv.value = data.password;
+                receiverDiv.value = data.receiver;
+                tempWarnDiv.value = data.temp_warn;
+                if (data.enable == 1) {
+                    serverAddrDiv.disabled = false;
+                    serverPortDiv.disabled = false;
+                    usernameDiv.disabled = false;
+                    passwordDiv.disabled = false;
+                    receiverDiv.disabled = false;
+                    tempWarnDiv.disabled = false;
                     btnSaveSmtpDiv.disabled = false;
                     btnOpenSmtpDiv.innerHTML = '关闭邮件功能';
+                } else {
+
+                    serverAddrDiv.disabled = true;
+                    serverPortDiv.disabled = true;
+                    usernameDiv.disabled = true;
+                    passwordDiv.disabled = true;
+                    receiverDiv.disabled = true;
+                    tempWarnDiv.disabled = true;
+                    btnSaveSmtpDiv.disabled = true;
+                    btnOpenSmtpDiv.innerHTML = '打开邮件功能';
                 }
             }
         });
