@@ -77,11 +77,7 @@
             <div class="col-lg-1">
             </div>
             <div class="col-lg-8 card">
-                <div class="card-body main-card" id="dataHistory">
-                    <div class="card-title">温湿度历史曲线</div>
-                    <canvas id="dataChart"></canvas>
-                </div>
-                <div class="card-body main-card" id="setting" hidden>
+                <div class="card-body main-card" id="setting">
                     <div class="card-title">邮件设置</div>
                     <form>
                         <div class="row">
@@ -125,16 +121,10 @@
 
         <div class="row" style="margin-top:20px">
 
-            <div class="col-lg-6 main-card card">
+            <div class="col-lg-12 main-card card">
                 <div class="card-body">
-                    <div class="card-title">实时温度曲线</div>
-                    <canvas id="tempChart"></canvas>
-                </div>
-            </div>
-            <div class="col-lg-6 main-card card">
-                <div class="card-body">
-                    <div class="card-title">实时湿度曲线</div>
-                    <canvas id="humiChart"></canvas>
+                    <div class="card-title">实时温湿度曲线</div>
+                    <canvas id="dataChart"></canvas>
                 </div>
             </div>
         </div>
@@ -146,8 +136,6 @@
 
 <script>
     var ctx1 = document.getElementById('dataChart');
-    var ctx2 = document.getElementById('tempChart');
-    var ctx3 = document.getElementById('humiChart');
 
     var tempdata = [];
     var humidata = [];
@@ -155,11 +143,10 @@
     var dataChart = new Chart(ctx1, {
         type: 'line',
         data: {
-            labels: ['0:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00',
-                '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00',
-                '21:00', '22:00', '23:00'],
+            labels: [],
             datasets: [{
                 label: '温度（℃）',
+                yAxisID:'temp-axis',
                 data: tempdata,
                 borderColor: [
                     'rgba(255, 99, 132, 1)'
@@ -169,6 +156,7 @@
             },
             {
                 label: '湿度（%）',
+                yAxisID:'humi-axis',
                 data: humidata,
                 borderColor: [
                     'rgba(255, 99, 32, 1)'
@@ -176,40 +164,22 @@
                 fill: false,
                 borderWidth: 2
             }]
+        },
+        options:{
+            scales:{
+                yAxes:[{
+                    id:'temp-axis',
+                    type:'linear',
+                    position:'left',
+                },{
+                    id:'humi-axis',
+                    type:'linear',
+                    position:'right',
+                }]
+            }
         }
     })
 
-    var tempChart = new Chart(ctx2, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: '温度（℃）',
-                data: [],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)'
-                ],
-                fill: false,
-                borderWidth: 2
-            }]
-        }
-    })
-
-    var humiChart = new Chart(ctx3, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: '湿度（%）',
-                data: [],
-                borderColor: [
-                    'rgba(255, 99, 32, 1)'
-                ],
-                fill: false,
-                borderWidth: 2
-            }]
-        }
-    })
 
     // document.getElementById('btn').onclick = function () {
     //     tempChart.data.datasets.forEach(dataset => {
@@ -253,29 +223,20 @@
             success: function (data) {
                 document.getElementById('cur_temp').value = data.temp;
                 document.getElementById('cur_humi').value = data.humi;
-                if (humiChart.data.datasets[0].data.length < 20) {
-                    humiChart.data.labels.push(date.format("mm:ss"));
-                    humiChart.data.datasets[0].data.push(data.humi);
+                if (dataChart.data.datasets[0].data.length < 20) {
+                    dataChart.data.labels.push(date.format("hh:mm:ss"));
+                    dataChart.data.datasets[0].data.push(data.temp);
+                    dataChart.data.datasets[1].data.push(data.humi);
                 }
                 else {
-                    humiChart.data.labels.shift();
-                    humiChart.data.labels.push(date.format("mm:ss"));
-                    humiChart.data.datasets[0].data.shift();
-                    humiChart.data.datasets[0].data.push(data.humi);
+                    dataChart.data.labels.shift();
+                    dataChart.data.labels.push(date.format("hh:mm:ss"));
+                    dataChart.data.datasets[0].data.shift();
+                    dataChart.data.datasets[1].data.shift();
+                    dataChart.data.datasets[0].data.push(data.temp);
+                    dataChart.data.datasets[1].data.push(data.humi);
                 }
-                if (tempChart.data.datasets[0].data.length < 20) {
-                    tempChart.data.labels.push(date.format("mm:ss"));
-                    tempChart.data.datasets[0].data.push(data.temp);
-                }
-                else {
-                    tempChart.data.labels.shift();
-                    tempChart.data.labels.push(date.format("mm:ss"));
-                    tempChart.data.datasets[0].data.shift();
-                    tempChart.data.datasets[0].data.push(data.temp);
-                }
-
-                tempChart.update();
-                humiChart.update();
+                dataChart.update();
             }
         })
     }
@@ -553,11 +514,9 @@
     }
 
     window.onload = function () {
-        getAht10SavedData();
         getBoardDeviceStatue();
     }
 
-    window.setInterval(getAht10SavedData, 1000 * 60 * 60)
     window.setInterval(getAht10Data, 2000);
 
 </script>
